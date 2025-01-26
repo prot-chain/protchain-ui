@@ -12,6 +12,7 @@ export default function ProteinScreen() {
     const [pdbId, setPdbId] = useState('');
     const [error, setError] = useState('');
     const [metadata, setMetadata] = useState(null);
+    const [pdbFile, setPdbFile] = useState(null); // Save PDB file for download
     const containerRef = useRef(null);
     const sceneRef = useRef(null);
     const rendererRef = useRef(null);
@@ -27,6 +28,7 @@ export default function ProteinScreen() {
     }, [router]);
 
     const initializeScene = (pdbBlob) => {
+        // Clean up previous scene and renderer if they exist
         if (sceneRef.current) {
             sceneRef.current.traverse((object) => {
                 if (object.isMesh) object.geometry.dispose();
@@ -122,11 +124,26 @@ export default function ProteinScreen() {
             setMetadata(payload);
 
             const pdbBlob = new Blob([response.file], { type: 'chemical/x-pdb' });
+            setPdbFile(pdbBlob); // Save the file for downloading
             initializeScene(pdbBlob);
         } catch (err) {
             setError(err.message || 'Error fetching PDB file.');
             console.error('Error fetching PDB file:', err);
         }
+    };
+
+    const downloadFile = () => {
+        if (!pdbFile) {
+            setError('No file to download.');
+            return;
+        }
+
+        const url = URL.createObjectURL(pdbFile);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${pdbId}.pdb`;
+        link.click();
+        URL.revokeObjectURL(url); // Clean up URL
     };
 
     if (!isAuthenticated) {
@@ -161,9 +178,24 @@ export default function ProteinScreen() {
                         borderRadius: '4px',
                         cursor: 'pointer',
                         fontSize: '1rem',
+                        marginRight: '1rem',
                     }}
                 >
                     Load PDB Structure
+                </button>
+                <button
+                    onClick={downloadFile}
+                    style={{
+                        padding: '0.75rem 1.5rem',
+                        backgroundColor: '#28a745',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '1rem',
+                    }}
+                >
+                    Download PDB File
                 </button>
                 {error && <div style={{ color: 'red', marginTop: '1rem' }}>{error}</div>}
             </div>
