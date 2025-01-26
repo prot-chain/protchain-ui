@@ -13,6 +13,8 @@ export default function ProteinScreen() {
     const [error, setError] = useState('');
     const [metadata, setMetadata] = useState(null);
     const containerRef = useRef(null);
+    const sceneRef = useRef(null); // For cleaning up the scene
+    const rendererRef = useRef(null); // For cleaning up the renderer
 
     useEffect(() => {
         const auth = localStorage.getItem('authenticated');
@@ -25,35 +27,54 @@ export default function ProteinScreen() {
     }, [router]);
 
     const initializeScene = (pdbBlob) => {
+        // Clean up any existing scene and renderer
+        if (sceneRef.current) {
+            sceneRef.current.traverse((object) => {
+                if (object.isMesh) object.geometry.dispose();
+                if (object.material) object.material.dispose();
+            });
+            sceneRef.current.clear();
+            sceneRef.current = null;
+        }
+
+        if (rendererRef.current) {
+            rendererRef.current.dispose();
+            containerRef.current.innerHTML = ''; // Clear existing DOM elements
+            rendererRef.current = null;
+        }
+
+        // Create a new scene, camera, and renderer
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(
+            75,
+            containerRef.current.clientWidth / containerRef.current.clientHeight,
+            0.1,
+            1000
+        );
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
+        containerRef.current.appendChild(renderer.domElement);
+
+        // Store references for cleanup
+        sceneRef.current = scene;
+        rendererRef.current = renderer;
+
+        // Add lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(1, 1, 1).normalize();
+        scene.add(directionalLight);
+
+        // Add orbit controls
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        // Parse and render PDB content
         const reader = new FileReader();
         reader.onload = () => {
             const pdbContent = reader.result;
-
-            // Create scene, camera, and renderer
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(
-                75,
-                containerRef.current.clientWidth / containerRef.current.clientHeight,
-                0.1,
-                1000
-            );
-            const renderer = new THREE.WebGLRenderer();
-            renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
-            containerRef.current.appendChild(renderer.domElement);
-
-            // Add lights
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
-
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(1, 1, 1).normalize();
-            scene.add(directionalLight);
-
-            // Add orbit controls
-            const controls = new OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-
-            // Load PDB structure from content
             const loader = new PDBLoader();
             const pdb = loader.parse(pdbContent);
             const { geometryAtoms, geometryBonds } = pdb;
@@ -137,7 +158,7 @@ export default function ProteinScreen() {
                         padding: '0.5rem',
                         marginBottom: '1rem',
                         borderRadius: '4px',
-                        border: '1px solid #000',
+                        border: '1px solid #ccc',
                         fontSize: '1rem',
                     }}
                 />
