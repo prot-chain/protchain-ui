@@ -2,7 +2,7 @@ import axios from 'axios';
 import cuid from 'cuid'
 
 export const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8082',
+  baseURL: 'http://localhost:8002',
     headers: {
         'Content-Type': 'application/json',
         'X-Request-Source': 'protchain-client',
