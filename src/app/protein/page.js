@@ -13,8 +13,8 @@ export default function ProteinScreen() {
     const [error, setError] = useState('');
     const [metadata, setMetadata] = useState(null);
     const containerRef = useRef(null);
-    const sceneRef = useRef(null); // For cleaning up the scene
-    const rendererRef = useRef(null); // For cleaning up the renderer
+    const sceneRef = useRef(null);
+    const rendererRef = useRef(null);
 
     useEffect(() => {
         const auth = localStorage.getItem('authenticated');
@@ -27,7 +27,6 @@ export default function ProteinScreen() {
     }, [router]);
 
     const initializeScene = (pdbBlob) => {
-        // Clean up any existing scene and renderer
         if (sceneRef.current) {
             sceneRef.current.traverse((object) => {
                 if (object.isMesh) object.geometry.dispose();
@@ -39,11 +38,10 @@ export default function ProteinScreen() {
 
         if (rendererRef.current) {
             rendererRef.current.dispose();
-            containerRef.current.innerHTML = ''; // Clear existing DOM elements
+            containerRef.current.innerHTML = '';
             rendererRef.current = null;
         }
 
-        // Create a new scene, camera, and renderer
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(
             75,
@@ -55,11 +53,9 @@ export default function ProteinScreen() {
         renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
         containerRef.current.appendChild(renderer.domElement);
 
-        // Store references for cleanup
         sceneRef.current = scene;
         rendererRef.current = renderer;
 
-        // Add lights
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
 
@@ -67,11 +63,9 @@ export default function ProteinScreen() {
         directionalLight.position.set(1, 1, 1).normalize();
         scene.add(directionalLight);
 
-        // Add orbit controls
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
 
-        // Parse and render PDB content
         const reader = new FileReader();
         reader.onload = () => {
             const pdbContent = reader.result;
@@ -79,17 +73,14 @@ export default function ProteinScreen() {
             const pdb = loader.parse(pdbContent);
             const { geometryAtoms, geometryBonds } = pdb;
 
-            // Atoms
             const materialAtoms = new THREE.PointsMaterial({ size: 0.5, vertexColors: true });
             const points = new THREE.Points(geometryAtoms, materialAtoms);
             scene.add(points);
 
-            // Bonds
             const materialBonds = new THREE.LineBasicMaterial({ color: 0xffffff });
             const bonds = new THREE.LineSegments(geometryBonds, materialBonds);
             scene.add(bonds);
 
-            // Adjust camera position to frame the structure
             const boundingBox = new THREE.Box3().setFromObject(points);
             const center = boundingBox.getCenter(new THREE.Vector3());
             const size = boundingBox.getSize(new THREE.Vector3()).length();
@@ -98,7 +89,6 @@ export default function ProteinScreen() {
             camera.lookAt(center);
             controls.update();
 
-            // Animation loop
             const animate = () => {
                 requestAnimationFrame(animate);
                 controls.update();
@@ -128,11 +118,9 @@ export default function ProteinScreen() {
                 throw new Error('Invalid response format.');
             }
 
-            // Extract and display metadata
             const { payload } = response.metadata;
             setMetadata(payload);
 
-            // Initialize the 3D scene with the PDB file blob
             const pdbBlob = new Blob([response.file], { type: 'chemical/x-pdb' });
             initializeScene(pdbBlob);
         } catch (err) {
@@ -148,7 +136,7 @@ export default function ProteinScreen() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100vh', backgroundColor: '#f5f5f5' }}>
             <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
-                <h1>3D PDB Viewer</h1>
+                <h1 style={{ color: '#000' }}>3D PDB Viewer</h1>
                 <input
                     type="text"
                     placeholder="Enter PDB ID (e.g., 1XYZ)"
@@ -160,6 +148,7 @@ export default function ProteinScreen() {
                         borderRadius: '4px',
                         border: '1px solid #ccc',
                         fontSize: '1rem',
+                        color: '#000',
                     }}
                 />
                 <button
@@ -183,8 +172,8 @@ export default function ProteinScreen() {
                 style={{ width: '80%', height: '50vh', backgroundColor: '#000', borderRadius: '8px', marginTop: '2rem' }}
             ></div>
             {metadata && (
-                <div style={{ width: '80%', marginTop: '2rem', textAlign: 'left' }}>
-                    <h2>Protein Metadata</h2>
+                <div style={{ width: '80%', marginTop: '2rem', textAlign: 'left', color: '#000' }}>
+                    <h2 style={{ color: '#000' }}>Protein Metadata</h2>
                     <p><strong>Primary Accession:</strong> {metadata.primary_accession}</p>
                     <p><strong>Recommended Name:</strong> {metadata.recommended_name || 'N/A'}</p>
                     <p><strong>Organism:</strong> {metadata.organism.scientific_name || 'Unknown'} ({metadata.organism.common_name || 'Unknown'})</p>
