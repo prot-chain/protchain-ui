@@ -2,7 +2,7 @@ import axios from 'axios';
 import cuid from 'cuid'
 
 export const apiClient = axios.create({
-  baseURL: 'http://ec2-13-61-195-224.eu-north-1.compute.amazonaws.com:8002',
+  baseURL: 'https://ec2-13-61-195-224.eu-north-1.compute.amazonaws.com:8002',
     headers: {
         'Content-Type': 'application/json',
         'X-Request-Source': 'protchain-client',
